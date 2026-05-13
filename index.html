@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Workbook Companion</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM (CDN) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel (ブラウザ内でJSXをコンパイルするため) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    // --- アイコンコンポーネント (Lucideアイコンの代わりとなるSVG) ---
+    const Mic = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>);
+    const Square = ({size=24, fill="currentColor", className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>);
+    const CheckCircle = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>);
+    const XCircle = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>);
+    const BookOpen = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>);
+    const Volume2 = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>);
+
+    // --- データ定義 ---
+    const quizData = [
+      {
+        section: "Listening 1",
+        subsections: [
+          {
+            title: "Vocabulary A",
+            instruction: "次の文の空所に当てはまる最も適切な語を選びなさい。",
+            questions: [
+              { id: "l1_v_1", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "Akira had to give up swimming [   ] because he was tired.", a: "halfway", exp: "「アキラは疲れたので，途中で泳ぐのを諦めざるを得なかった」", audio: "Akira had to give up swimming halfway because he was tired." },
+              { id: "l1_v_2", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "The young actor passed the [   ] for the theatrical company.", a: "try-out", exp: "「その若い俳優は劇団の適性試験に合格した」", audio: "The young actor passed the try-out for the theatrical company." },
+              { id: "l1_v_3", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "Kota prefers [   ] to real sports.", a: "esports", exp: "「コウタは実際のスポーツよりもeスポーツの方が好きだ」 prefer A to B「BよりもAの方が好きである」", audio: "Kota prefers esports to real sports." },
+              { id: "l1_v_4", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "“You think Tony will be selected as captain?” “Yes, I can’t say for sure, [   ].”", a: "though", exp: "「あなたはトニーがキャプテンに選ばれると思うのですか」「はい，確かなことは言えませんが」", audio: "You think Tony will be selected as captain? Yes, I can’t say for sure, though." },
+              { id: "l1_v_5", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "Check out this online video. It focuses on the [   ] of English grammar, and I'm sure it'll help you improve your English skills.", a: "basics", exp: "「このオンライン動画を見てください。それは英文法の基礎に重点を置いており…」 focus on ...「 … に重点を置く」", audio: "Check out this online video. It focuses on the basics of English grammar, and I'm sure it'll help you improve your English skills." },
+              { id: "l1_v_6", type: "select", options: ["though", "try-out", "esports", "quit", "basics", "halfway"], q: "My uncle found a new job one day after he [   ] the company.", a: "quit", exp: "「おじは，その会社を辞めてから1日後に新しい仕事を見つけた」", audio: "My uncle found a new job one day after he quit the company." }
+            ]
+          },
+          {
+            title: "Pronunciation B",
+            instruction: "次の各組の単語の音声を聞き、下線部の発音が同じであれば「○」を、異なれば「×」を選びなさい。",
+            questions: [
+              { id: "l1_p_1", type: "select", options: ["○", "×"], q: "1. halfway / mammal", a: "○", exp: "ともに ［ ӕ ］", audio: "halfway. mammal." },
+              { id: "l1_p_2", type: "select", options: ["○", "×"], q: "2. try-out / variety", a: "×", exp: "［ aɪ ］と［ i ］", audio: "try-out. variety." },
+              { id: "l1_p_3", type: "select", options: ["○", "×"], q: "3. online / arrival", a: "○", exp: "ともに ［ aɪ ］", audio: "online. arrival." },
+              { id: "l1_p_4", type: "select", options: ["○", "×"], q: "4. esport / predator", a: "×", exp: "［ iː ］と［ e ］", audio: "esport. predator." },
+              { id: "l1_p_5", type: "select", options: ["○", "×"], q: "5. stuff / dune", a: "×", exp: "［ ʌ ］と［ uː ］", audio: "stuff. dune." },
+              { id: "l1_p_6", type: "select", options: ["○", "×"], q: "6. choice / chatty", a: "○", exp: "ともに ［ tʃ ］", audio: "choice. chatty." }
+            ]
+          },
+          {
+            title: "Pronunciation C",
+            instruction: "次の単語で最も強く読む箇所を選びなさい。",
+            questions: [
+              { id: "l1_p_c1", type: "select", options: ["tour", "na", "ment"], q: "1. tour-na-ment", a: "tour", exp: "「トーナメント，選手権試合」", audio: "tournament" },
+              { id: "l1_p_c2", type: "select", options: ["ba", "sic"], q: "2. ba-sic", a: "ba", exp: "「基礎」", audio: "basic" },
+              { id: "l1_p_c3", type: "select", options: ["ac", "tiv", "i", "ty"], q: "3. ac-tiv-i-ty", a: "tiv", exp: "「活動」", audio: "activity" },
+              { id: "l1_p_c4", type: "select", options: ["ex", "tra", "cur", "ric", "u", "lar"], q: "4. ex-tra-cur-ric-u-lar", a: "ric", exp: "「課外の」", audio: "extracurricular" }
+            ]
+          },
+          {
+            title: "Comprehension D",
+            instruction: "音声を聞いて、本文の内容に当てはまるものはTを、当てはまらないものはFを選びなさい。",
+            questions: [
+              { id: "l1_c_d1", type: "select", options: ["T", "F"], q: "1. Try-outs for the soccer team will be held next Monday.", a: "T", exp: "放送文の中で、サッカー部のトライアウト（適性試験）が来週の月曜日に行われることがアナウンスされているため、T（True）となります。", audio: "Try-outs for the soccer team will be held next Monday." },
+              { id: "l1_c_d2", type: "select", options: ["T", "F"], q: "2. Ippei says he does not know much about esports.", a: "F", exp: "Ippeiはeスポーツ部について熱心に語り、その内容にも詳しいため、「eスポーツについてあまり知らない」とするこの文はF（False）となります。", audio: "Ippei says he does not know much about esports." },
+              { id: "l1_c_d3", type: "select", options: ["T", "F"], q: "3. Sofia says she is good at playing video games.", a: "F", exp: "Sofiaは「私はスポーツが苦手だから、eスポーツなら私にもできるかもしれない」という趣旨の発言をしており、ビデオゲームがすでに得意だとは言っていないためF（False）となります。", audio: "Sofia says she is good at playing video games." },
+              { id: "l1_c_d4", type: "select", options: ["T", "F"], q: "4. Ippei offers to teach Sofia how to play golf.", a: "T", exp: "IppeiがSofiaに対して「じゃあ、僕がゴルフゲーム（またはゴルフ）のやり方を教えようか」と申し出る場面があるため、T（True）となります。", audio: "Ippei offers to teach Sofia how to play golf." }
+            ]
+          },
+          {
+            title: "Grammar and Expressions E",
+            instruction: "日本語の意味に合うように、空所に適切な語を入力しなさい。",
+            questions: [
+              { id: "l1_g_1", type: "text", q: "「ねえ、お父さん。eスポーツ部に入ったよ」「まさか！」\n“Guess what, Dad? I joined the esports club.” “[   ]!”", a: "No way", exp: "No way.は「まさか」という意味の他に、「絶対にいやだ」などの意味もある。", audio: "Guess what, Dad? I joined the esports club. No way!" },
+              { id: "l1_g_2", type: "text", q: "この高校には演劇部や写真部とかもありますよ。\nThis high school has the drama club, the photo club, [   ].", a: "and stuff", exp: "「 … とか」は... and stuffで表すことができる。口語的な表現。", audio: "This high school has the drama club, the photo club, and stuff." },
+              { id: "l1_g_3", type: "text", q: "「クラブに入らないという選択肢もあります」「それは大事な点ですね」\n“There’s an option of not joining any clubs.” “That’s a [   ].”", a: "good point", exp: "pointは「大事な点、要点」の意味。That’s a good point.で「あなたの言っていることは大事な点だね」。", audio: "There’s an option of not joining any clubs. That’s a good point." }
+            ]
+          },
+          {
+            title: "Grammar and Expressions F (並べ替え)",
+            instruction: "日本語の意味に合うように、（　）内の語句を正しい順番に並べ替えて入力しなさい。",
+            questions: [
+              { id: "l1_g_f1", type: "text", q: "このレストランでは，選べるセットメニューがたくさんあります。\nAt this restaurant, there are a variety ( choose / set menus / of / from / to ).", a: "of set menus to choose from", exp: "set menusをa variety of ...「さまざまな … 」で修飾する。また、menusの後ろにto不定詞を続ける。前置詞fromを文末に置く点に注意。", audio: "At this restaurant, there are a variety of set menus to choose from." },
+              { id: "l1_g_f2", type: "text", q: "夫婦は，娘にどちらの机を買ってあげるかについて話し合っていました。\nThe couple was talking ( they / which / buy / desk / would / about ) for their daughter.", a: "about which desk they would buy", exp: "前置詞aboutの目的語にwhich節を置いた形で表す。which節中の語順に注意。", audio: "The couple was talking about which desk they would buy for their daughter." },
+              { id: "l1_g_f3", type: "text", q: "明日，ゴルフクラブを持参するのを忘れないでください。\nPlease ( bring / that / sure / you / make ) your golf clubs tomorrow.", a: "make sure that you bring", exp: "「忘れないでください」を「必ず … してください」と考え、make sure (that) ... で表す。", audio: "Please make sure that you bring your golf clubs tomorrow." }
+            ]
+          },
+          {
+            title: "Grammar and Expressions G (英作文)",
+            instruction: "次の日本文を英語にしなさい。ただし、（　）内の語（句）を使うこと。",
+            questions: [
+              { id: "l1_g_g1", type: "text", q: "あなたはどう思いますか。（say）", a: "What do you say?", exp: "What do you say?は「どう思いますか」と相手の意見を尋ねる表現。", audio: "What do you say?" },
+              { id: "l1_g_g2", type: "text", q: "私はサッカーがあまり得意ではありません。（great）", a: "I'm not great at soccer.", exp: "great を用いるので，「 … 得意ではない」をI’m not great at ... の形で表す。", audio: "I'm not great at soccer." },
+              { id: "l1_g_g3", type: "text", q: "私たちは道に迷ったようです。（seems like, lost）", a: "It seems like we are lost.", exp: "「 … のようである」をIt seems like (that) ... で表す。", audio: "It seems like we are lost." }
+            ]
+          },
+          {
+            title: "Phrase Practice",
+            instruction: "対話が自然な流れになるように、空所に適切な語（句）を入力しなさい。",
+            questions: [
+              { id: "l1_p_p1", type: "text", q: "A : Miki, I’m [   ] joining the gymnastics team.\nB : Oh, really?", a: "thinking about", exp: "「体操部に入ろうと思っている」など自分の考えを述べる発言にする。", audio: "Miki, I’m thinking about joining the gymnastics team. Oh, really?" },
+              { id: "l1_p_p2", type: "text", q: "A : Yeah. If you’re interested, let’s join the team together. [   ] say?\nB : No way, I'm joining the brass band...", a: "What do you", exp: "What do you say?「あなたはどうですか」などの勧誘を表す発言にする。", audio: "Yeah. If you’re interested, let’s join the team together. What do you say?" },
+              { id: "l1_p_p3", type: "text", q: "B : [   ], I’m joining the brass band. I’m not great at sports...", a: "No way", exp: "断る発言にする。", audio: "No way, I’m joining the brass band. I’m not great at sports." },
+              { id: "l1_p_p4", type: "text", q: "A : Come on, the gymnastics team looks very fun... The atmosphere looks great.\nB : Well, it does [   ] could be fun. But sorry, I won’t change my mind.", a: "seem like it", exp: "「たしかにおもしろそう」とAの気持ちを受け止める発言。", audio: "Well, it does seem like it could be fun. But sorry, I won’t change my mind." }
+            ]
+          }
+        ]
+      },
+      {
+        section: "Reading 1 (Paragraph 1-3)",
+        subsections: [
+          {
+            title: "Vocabulary A",
+            instruction: "空所に入る適切な語を下の語群から選び、必要に応じて適切な形に変えて入力しなさい。",
+            questions: [
+              { id: "r1_1_v_1", type: "text", wordbank: ["spectator", "arena", "electronic", "streaming", "content", "viewership", "competitor", "highly", "strictly"], q: "Last Sunday, Kazuki went to the grand [   ] to attend a rock festival.", a: "arena", exp: "「この前の日曜日に，カズキはロックフェスティバルを見に大競技場へ行った」", audio: "Last Sunday, Kazuki went to the grand arena to attend a rock festival." },
+              { id: "r1_1_v_2", type: "text", wordbank: ["spectator", "arena", "electronic", "streaming", "content", "viewership", "competitor", "highly", "strictly"], q: "Music [   ] services allow us to listen to various genres of music...", a: "streaming", exp: "「音楽のストリーミングサービスにより...」 allow ... to do「…が～するのを可能にする」", audio: "Music streaming services allow us to listen to various genres of music." },
+              { id: "r1_1_v_3", type: "text", wordbank: ["spectator", "arena", "electronic", "streaming", "content", "viewership", "competitor", "highly", "strictly"], q: "[   ] of the TV program turned out to be higher in July than in June.", a: "Viewership", exp: "「そのテレビ番組の7月の視聴率は，6月よりも高かったということが判明した」", audio: "Viewership of the TV program turned out to be higher in July than in June." },
+              { id: "r1_1_v_4", type: "text", wordbank: ["spectator", "arena", "electronic", "streaming", "content", "viewership", "competitor", "highly", "strictly"], q: "Eating and drinking are [   ] forbidden here in this exhibition room.", a: "strictly", exp: "「この展示室では，飲食は固く禁止されている」 forbid「…を禁ずる」", audio: "Eating and drinking are strictly forbidden here in this exhibition room." },
+              { id: "r1_1_v_5", type: "text", wordbank: ["spectator", "arena", "electronic", "streaming", "content", "viewership", "competitor", "highly", "strictly"], q: "Bella shows much interest in [   ] engineering...", a: "electronic", exp: "「ベラは電子工学に高い関心を示しており...」", audio: "Bella shows much interest in electronic engineering." }
+            ]
+          },
+          {
+            title: "Vocabulary B",
+            instruction: "次の文の空所に、適切な派生語（名詞・形容詞など）を入力しなさい。",
+            questions: [
+              { id: "r1_1_vb_1", type: "text", q: "That national museum is one of the tourist [   ] in New Zealand. (attractの名詞形など)", a: "attractions", exp: "「あの国立博物館はニュージーランドにおける観光名所の１つだ」", audio: "That national museum is one of the tourist attractions in New Zealand." },
+              { id: "r1_1_vb_2", type: "text", q: "My uncle started a company, and made a success in the highly [   ] market. (competeの形容詞形)", a: "competitive", exp: "「おじは会社を立ち上げ，非常に競争の激しい市場で成功を収めた」", audio: "My uncle started a company, and made a success in the highly competitive market." },
+              { id: "r1_1_vb_3", type: "text", q: "Thanks to the new [   ], more and more companies are developing eco-friendly products. (regulateの名詞形)", a: ["regulation", "regulations"], exp: "「新しい規制のおかげで，ますます多くの会社が環境に優しい製品を開発している」", audio: "Thanks to the new regulations, more and more companies are developing eco-friendly products." },
+              { id: "r1_1_vb_4", type: "text", q: "Wayne denied his [   ] in the school bullying. (involveの名詞形)", a: "involvement", exp: "「ウェインは校内のいじめへの関与を否定した」", audio: "Wayne denied his involvement in the school bullying." }
+            ]
+          },
+          {
+            title: "Vocabulary C",
+            instruction: "［　］内の日本語を参考にして、空所に適切な語（句）を入力しなさい。",
+            questions: [
+              { id: "r1_1_vc_1", type: "text", q: "Yuko told her grandson, “What do you want me to buy for your sixth birthday, Rikuto? The [   ] is the [   ].\" ［限界がない］", a: "sky limit", exp: "the sky is the limitは直訳すると「空が限界である」だが、「限界がない」という意味の慣用表現。（※スペース区切りで続けて入力）", audio: "Yuko told her grandson, “What do you want me to buy for your sixth birthday, Rikuto? The sky is the limit.\"" },
+              { id: "r1_1_vc_2", type: "text", q: "With the [   ] COVID-19, our lives had to change. ［ … の出現で］", a: "advent of", exp: "with the advent of ...「…の出現で」", audio: "With the advent of COVID-19, our lives had to change." },
+              { id: "r1_1_vc_3", type: "text", q: "People often [   ] my cousin [   ] a famous actor. ［混同する］", a: "confuse with", exp: "confuse A with B「Aを Bと混同する」（※Aを省き、confuse with とスペース区切りで入力）", audio: "People often confuse my cousin with a famous actor." }
+            ]
+          },
+          {
+            title: "Comprehension D",
+            instruction: "本文の内容に合うものを全て選びなさい。",
+            questions: [
+              { id: "r1_1_c_1", type: "multiselect", options: ["a", "b", "c", "d", "e"], q: "a. One purpose of the passage is to introduce the federation’s history.\nb. Esports have become increasingly popular on a global scale.\nc. The esports total viewership in 2020 doubled compared to the previous year.\nd. SDESF accepts questions from users who visited their website.\ne. Esports stand for electronic sports, and their environments are well-controlled.", a: ["b", "e"], exp: "bとeが正解です。\nb: 本文中で「eスポーツは地球規模でますます人気が高まっている」と説明されています。\ne: 本文中で「Esportsはelectronic sportsの略であり、プレイヤーはよく制御された環境で競技を行う」と述べられています。\n\n[その他の選択肢が不正解である理由]\na: 連盟の歴史を紹介することが文章の主な目的ではありません。\nc: 視聴率が前年比で「倍増した(doubled)」という具体的な記述はありません。\nd: SDESFがウェブサイト訪問者からの質問を受け付けているという記述はありません。", audio: "b. Esports have become increasingly popular on a global scale. e. Esports stand for electronic sports, and their environments are well-controlled." }
+            ]
+          }
+        ]
+      },
+      {
+        section: "Reading 1 (Paragraph 4-8)",
+        subsections: [
+          {
+            title: "Vocabulary A",
+            instruction: "次の語の定義に当てはまる最も適切な語を選びなさい。",
+            questions: [
+              { id: "r1_2_va_1", type: "select", options: ["socialize", "characteristic", "obvious", "component", "discipline"], q: "to spend time with other people socially, usually in a friendly way", a: "socialize", exp: "socialize: 「社交的に交際する」を意味します。spend time with other people socially（他の人と社交的に時間を過ごす）という定義に合致します。", audio: "socialize: to spend time with other people socially, usually in a friendly way." },
+              { id: "r1_2_va_2", type: "select", options: ["socialize", "characteristic", "obvious", "component", "discipline"], q: "a particular quality or feature that makes someone or something different from others", a: "characteristic", exp: "characteristic: 「特徴、特性」を意味します。a particular quality or feature（他のものと区別される特定の質や特徴）という定義に合致します。", audio: "characteristic: a particular quality or feature that makes someone or something different from others." },
+              { id: "r1_2_va_3", type: "select", options: ["socialize", "characteristic", "obvious", "component", "discipline"], q: "clear to most people and easy to notice or understand", a: "obvious", exp: "obvious: 「明白な」を意味します。clear to most people and easy to notice（ほとんどの人にとって明確で、気づきやすい）という定義に合致します。", audio: "obvious: clear to most people and easy to notice or understand." },
+              { id: "r1_2_va_4", type: "select", options: ["socialize", "characteristic", "obvious", "component", "discipline"], q: "one of separate parts or features of something", a: "component", exp: "component: 「構成要素、部分」を意味します。one of separate parts or features（何かを構成する別々の部分の1つ）という定義に合致します。", audio: "component: one of separate parts or features of something." },
+              { id: "r1_2_va_5", type: "select", options: ["socialize", "characteristic", "obvious", "component", "discipline"], q: "(a way of) training that makes people more able to control themselves", a: "discipline", exp: "discipline: 「訓練、規律」を意味します。training that makes people more able to control themselves（自己をコントロールできるようにする訓練）という定義に合致します。", audio: "discipline: training that makes people more able to control themselves." }
+            ]
+          },
+          {
+            title: "Vocabulary B",
+            instruction: "次の文の空所に、適切な派生語（名詞・動詞・形容詞など）を入力しなさい。",
+            questions: [
+              { id: "r1_2_vb_1", type: "text", q: "Takashi checked the [   ] for the part-time job before applying for it. (requireの名詞形など)", a: ["requirement", "requirements"], exp: "「タカシは応募前に，そのアルバイトの職の要件を確認した」 apply for ...「…に応募する」", audio: "Takashi checked the requirements for the part-time job before applying for it." },
+              { id: "r1_2_vb_2", type: "text", q: "The population of the country is gradually [   ]. (growの分詞形など)", a: "growing", exp: "「その国の人口は徐々に増加中である」", audio: "The population of the country is gradually growing." },
+              { id: "r1_2_vb_3", type: "text", q: "[   ] in online games affected Holden’s sleeping hours. (immerseの名詞形)", a: "Immersion", exp: "「オンラインゲームへの没入がホールデンの睡眠時間に悪影響を及ぼした」", audio: "Immersion in online games affected Holden’s sleeping hours." },
+              { id: "r1_2_vb_4", type: "text", q: "The brass band and cheerleading club [   ] on the performance I saw at the school festival. (collaborateの過去形)", a: "collaborated", exp: "「…パフォーマンスで，ブラスバンドとチアリーディング部がコラボしていた」", audio: "The brass band and cheerleading club collaborated on the performance I saw at the school festival." },
+              { id: "r1_2_vb_5", type: "text", q: "Matthew found that he needed help to [   ] that event. (managementの動詞形)", a: "manage", exp: "「マシューはそのイベントを運営するには助けが必要だと気付いた」", audio: "Matthew found that he needed help to manage that event." }
+            ]
+          },
+          {
+            title: "Vocabulary C",
+            instruction: "日本語の意味に合うように、空所に適切な語（句）を入力しなさい。",
+            questions: [
+              { id: "r1_2_vc_1", type: "text", q: "高度な CG 技術が，この映画の制作に費やされました。\nAdvanced CG technology [   ] making this film.", a: "went into", exp: "go into doing「…するために費やされる」の過去形。", audio: "Advanced CG technology went into making this film." },
+              { id: "r1_2_vc_2", type: "text", q: "エラ・フィッツジェラルドは，偉大な女性ジャズシンガーと見なされています。\nElla Fitzgerald is [   ] a great female jazz singer.", a: "regarded as", exp: "be regarded as ...「…と見なされている」", audio: "Ella Fitzgerald is regarded as a great female jazz singer." },
+              { id: "r1_2_vc_3", type: "text", q: "通常，仲間とのチームワークはどんなクラブ活動でも大切です。\n[   ], [   ] with [   ] is important in any club activity.", a: "Normally teamwork peers", exp: "normally「通常は」、teamwork「チームワーク」、peers「仲間」。(スペース区切りで続けて入力)", audio: "Normally, teamwork with peers is important in any club activity." }
+            ]
+          },
+          {
+            title: "Comprehension D",
+            instruction: "本文の内容に合うように、空所に適切な語を入力しなさい。（頭文字が与えられている場合はその文字で始まる語）",
+            questions: [
+              { id: "r1_2_cd_1", type: "text", q: "Esports have many 1. [ b  ]. For example, they help people develop important life skills.", a: "benefits", exp: "「eスポーツには多数の利点がある。」", audio: "Esports have many benefits. For example, they help people develop important life skills." },
+              { id: "r1_2_cd_2", type: "text", q: "2. [ T  ] is one of them. This is because its participants have the opportunity to...", a: "Teamwork", exp: "「チームワークはそれらのうちの１つだ。」", audio: "Teamwork is one of them." },
+              { id: "r1_2_cd_3", type: "text", q: "...have the opportunity to 3. [ s  ] with their peers to achieve common goals.", a: "socialize", exp: "「仲間とつきあう機会が得られるからだ。」", audio: "This is because its participants have the opportunity to socialize with their peers to achieve common goals." },
+              { id: "r1_2_cd_4", type: "text", q: "In addition, esports can encourage an 4. [ i  ] in STEM related fields.", a: "interest", exp: "「関連分野への関心をかき立てうる。」", audio: "In addition, esports can encourage an interest in STEM related fields." },
+              { id: "r1_2_cd_5", type: "text", q: "Therefore, more and more universities and colleges even offer 5. [ s  ] for esports players...", a: "scholarships", exp: "「奨学金を提供しさえしている。」", audio: "Therefore, more and more universities and colleges even offer scholarships for esports players in recent years." }
+            ]
+          }
+        ]
+      },
+      {
+        section: "Reading 1 Grammar and Expressions",
+        subsections: [
+          {
+            title: "Grammar A (受動態の不定詞)",
+            instruction: "日本語の意味に合うように、空所に適切な語を入力しなさい。",
+            questions: [
+              { id: "g_a_1", type: "text", q: "私の学校の制服は洗われる必要があります。\nMy school uniform needs to [   ].", a: "be washed", exp: "受け身の不定詞〈to be＋過去分詞〉の形で表す。ここでは「…されること」の意味。", audio: "My school uniform needs to be washed." },
+              { id: "g_a_2", type: "text", q: "その少女に気に入られようと，トムは減量を決意しました。\nTo [   ] by the girl, Tom decided to lose weight.", a: "be liked", exp: "受け身の不定詞で「…されるために」を表す。", audio: "To be liked by the girl, Tom decided to lose weight." },
+              { id: "g_a_3", type: "text", q: "このギフトボックスはできるだけ早く配達されなくてはいけません。\nThis gift box has to [   ] as soon as possible.", a: "be delivered", exp: "受け身の不定詞で「…されるべき」を表す。", audio: "This gift box has to be delivered as soon as possible." },
+              { id: "g_a_4", type: "text", q: "少年は笑われないように努めました。\nThe boy tried not to [   ] at.", a: "be laughed", exp: "不定詞を否定する場合にはtoの直前にnotを置く。laugh at ...で「…を笑う」という意味なので、「笑われないように」はnot to be laughed atとなる。", audio: "The boy tried not to be laughed at." }
+            ]
+          },
+          {
+            title: "Grammar B (強調の助動詞)",
+            instruction: "（　）内の語句を正しい順番に並べ替えなさい。",
+            questions: [
+              { id: "g_b_1", type: "text", q: "“Do you remember Aoi?...” “Of course, ( do / remember / I / her ).”", a: "I do remember her", exp: "助動詞doで動詞rememberを強調する。「本当に…」の意味。", audio: "Do you remember Aoi? Of course, I do remember her." },
+              { id: "g_b_2", type: "text", q: "Some people don’t think Hayato loves animals, ( he / them / love / but / does ).", a: "but he does love them", exp: "主語がheなので、動詞loveを強調するにはdoesを用いる。", audio: "Some people don’t think Hayato loves animals, but he does love them." },
+              { id: "g_b_3", type: "text", q: "Believe it or not, ( in / the famous actor / I / see / person / did ) yesterday.", a: "I did see the famous actor in person", exp: "過去の文なので、強調にはdidを用いる。続く動詞は原形にする点に注意。in person = 直接", audio: "Believe it or not, I did see the famous actor in person yesterday." },
+              { id: "g_b_4", type: "text", q: "“Look on the bright side... Things are not so bad as you imagine.”\n“Well, ( like / seem / does / I / it / have / don’t ) to be worried this much.”", a: "it does seem like I don't have", exp: "助動詞doesで動詞seemを強調する。", audio: "Well, it does seem like I don't have to be worried this much." }
+            ]
+          },
+          {
+            title: "Grammar C (空所補充)",
+            instruction: "意味の通る英文になるように（　）内の語を適切な形に変えて、空所に入力しなさい。（1語とは限らない）",
+            questions: [
+              { id: "g_c_1", type: "text", q: "Does this math homework need to [   ] by next Monday? (do)", a: "be done", exp: "主語がthis math homeworkなので、need to be done と受け身の不定詞の形にする。", audio: "Does this math homework need to be done by next Monday?" },
+              { id: "g_c_2", type: "text", q: "To [   ] into the calligraphy club, Sakura was asked a series of questions. (accept)", a: "be accepted", exp: "書道部への入部を「認められる」ためと考えられるため、To be acceptedと受け身の不定詞で目的を表す。", audio: "To be accepted into the calligraphy club, Sakura was asked a series of questions." },
+              { id: "g_c_3", type: "text", q: "Ricky was delighted to [   ] to the wedding ceremony. (invite)", a: "be invited", exp: "be delighted to doで「…してうれしい」という意味なので、to be invitedと受け身の不定詞にする。", audio: "Ricky was delighted to be invited to the wedding ceremony." },
+              { id: "g_c_4", type: "text", q: "“Look, the man is bleeding there!” “There’s no second to [   ]. Call 119 now.” (lose)", a: "be lost", exp: "受け身の不定詞を用いて「1 秒も失われてはならない」の意味にする。secondがto be lostの意味上の主語。", audio: "There’s no second to be lost. Call 119 now." },
+              { id: "g_c_5", type: "text", q: "Not to [   ], Ayaka explained what happened in detail. (misunderstand)", a: "be misunderstood", exp: "「誤解されないように」と、受け身の不定詞で目的を表す。", audio: "Not to be misunderstood, Ayaka explained what happened in detail." }
+            ]
+          },
+          {
+            title: "Grammar D, E, F, G (強調・受け身・英作文)",
+            instruction: "指示に従って適切な語（句）を入力しなさい。",
+            questions: [
+              { id: "g_d_1", type: "text", q: "＜本当は仕事は終わっていないのだろうと言われて＞私は本当に自分の仕事を終えました。(3語・助動詞使用)\nI [   ] my task.", a: ["did finish doing"], exp: "助動詞didで動詞finishを強調する。", audio: "I did finish doing my task." },
+              { id: "g_d_3", type: "text", q: "私はあさって、晴れることを心から願っています。(4語・助動詞使用)\nI [   ] be sunny the day after tomorrow.", a: "do hope it will", exp: "助動詞doで動詞hope (that) ... を強調する。", audio: "I do hope it will be sunny the day after tomorrow." },
+              { id: "g_e_1", type: "text", q: "I saw our school president there. （強調の助動詞 did を使って書き換え）", a: "I did see our school president there.", exp: "過去の文なので、助動詞didの後ろに原形seeを続ける。", audio: "I did see our school president there." },
+              { id: "g_f_2", type: "text", q: "It was not a dream. It is true that I saw an alien in the forest.\n= It was not a dream. I [   ] an alien in the forest. (2語で)", a: ["did see", "really saw"], exp: "強調の助動詞の代わりに副詞really「本当に」などを用いて表してもよい。", audio: "It was not a dream. I really saw an alien in the forest." },
+              { id: "g_g_2", type: "text", q: "その祭りは延期される必要がありました。（needed, postponed を使用して英作文）", a: "The festival needed to be postponed.", exp: "needed to be postponed で「延期される必要があった」。", audio: "The festival needed to be postponed." }
+            ]
+          }
+        ]
+      },
+      {
+        section: "Listening 2",
+        subsections: [
+          {
+            title: "Vocabulary A",
+            instruction: "次の語の定義に当てはまる最も適切な語を選びなさい。",
+            questions: [
+              { id: "l2_va_1", type: "select", options: ["assess", "firm", "subjective", "athletics", "opposing"], q: "to carefully consider a person or situation and make a judgment", a: "assess", exp: "「…を評価する」", audio: "assess: to carefully consider a person or situation and make a judgment." },
+              { id: "l2_va_2", type: "select", options: ["assess", "firm", "subjective", "athletics", "opposing"], q: "certain, definite and unlikely to change", a: "firm", exp: "「揺るぎない」", audio: "firm: certain, definite and unlikely to change." },
+              { id: "l2_va_3", type: "select", options: ["assess", "firm", "subjective", "athletics", "opposing"], q: "based on personal feelings or opinions rather than facts, and consequently likely to be inaccurate", a: "subjective", exp: "「主観的な」", audio: "subjective: based on personal feelings or opinions rather than facts, and consequently likely to be inaccurate." },
+              { id: "l2_va_4", type: "select", options: ["assess", "firm", "subjective", "athletics", "opposing"], q: "physical activities such as sports", a: "athletics", exp: "「運動（競技）」", audio: "athletics: physical activities such as sports." },
+              { id: "l2_va_5", type: "select", options: ["assess", "firm", "subjective", "athletics", "opposing"], q: "in opposition to or quite different from each other", a: "opposing", exp: "「反対の」", audio: "opposing: in opposition to or quite different from each other." }
+            ]
+          },
+          {
+            title: "Vocabulary B",
+            instruction: "空所に入る適切な語を下の語群から選び、必要に応じて適切な形に変えて入力しなさい。",
+            questions: [
+              { id: "l2_vb_1", type: "text", wordbank: ["additionally", "factor", "participate", "objectively", "hoop", "assess", "subjective", "opposing", "whether"], q: "The problem is [   ] Satoshi will join our team or not.", a: "whether", exp: "「問題は，サトシが私たちのチームに加わるかどうかだ」 接続詞 whetherによって導かれる名詞節を文の補語に置いた形。", audio: "The problem is whether Satoshi will join our team or not." },
+              { id: "l2_vb_2", type: "text", wordbank: ["additionally", "factor", "participate", "objectively", "hoop", "assess", "subjective", "opposing", "whether"], q: "Wesley and I [   ] in the volunteer activity together last summer.", a: "participated", exp: "「ウェスレーと私はこの前の夏に，一緒にボランティア活動に参加した」", audio: "Wesley and I participated in the volunteer activity together last summer." },
+              { id: "l2_vb_3", type: "text", wordbank: ["additionally", "factor", "participate", "objectively", "hoop", "assess", "subjective", "opposing", "whether"], q: "What do you think was the biggest [   ] of her success as a figure skater?", a: "factor", exp: "「フィギュアスケーターとしての彼女の成功の最大の要因は何だったと思うか」", audio: "What do you think was the biggest factor of her success as a figure skater?" },
+              { id: "l2_vb_4", type: "text", wordbank: ["additionally", "factor", "participate", "objectively", "hoop", "assess", "subjective", "opposing", "whether"], q: "Figure skating needs physical strength. [   ], it requires aesthetic sensibilities.", a: ["Additionally", "additionally"], exp: "「フィギュアスケートには体力が必要だ。加えて，それは美的センスを必要とする」", audio: "Figure skating needs physical strength. Additionally, it requires aesthetic sensibilities." },
+              { id: "l2_vb_5", type: "text", wordbank: ["additionally", "factor", "participate", "objectively", "hoop", "assess", "subjective", "opposing", "whether"], q: "To see the situation more [   ], I asked for people’s opinions.", a: "objectively", exp: "「状況をもっと客観的に眺めるため，私は人の意見を求めた」", audio: "To see the situation more objectively, I asked for people’s opinions." }
+            ]
+          },
+          {
+            title: "Vocabulary C",
+            instruction: "日本語の意味に合うように、空所に適切な語を入力しなさい。",
+            questions: [
+              { id: "l2_vc_1", type: "text", q: "私はユウマが好きです。一つには，彼はいつも物事の明るい面を見るからです。\nI like Yuma. [   ] one [   ], he always looks on the bright side.", a: "For thing", exp: "for one thingで「１つには，一例を挙げると」の意味。理由説明に用いる表現。(スペース区切りで入力)", audio: "I like Yuma. For one thing, he always looks on the bright side." },
+              { id: "l2_vc_2", type: "text", q: "シャキーラは疑いようもなく，私たちのチームで最も有能なバレーボール選手です。\nShakira is [   ] a [   ] the best volleyball player in our team.", a: "without doubt", exp: "without a doubt「疑いようもなく」", audio: "Shakira is without a doubt the best volleyball player in our team." },
+              { id: "l2_vc_3", type: "text", q: "プレーすることでライフスキルが磨かれるスポーツもあります。その上，それは楽しいです。\nPlaying some sports develops life skills. [   ] [   ], it’s enjoyable.", a: "In addition", exp: "in additionで「加えて，その上」の意味。追加を表す。", audio: "Playing some sports develops life skills. In addition, it’s enjoyable." }
+            ]
+          },
+          {
+            title: "Comprehension D",
+            instruction: "対話の内容についての質問に対する答えとして最も適切なものを選びなさい。",
+            questions: [
+              { id: "l2_cd_1", type: "select", options: ["a", "b", "c", "d"], q: "1. What is not true about this debate?\na. The topic is whether figure skating can be counted as a sport.\nb. Ippei’s argument is followed by Karlie’s argument.\nc. Ippei’s opinion is based on his personal experience.\nd. Ippei mentions soccer to make his argument convincing.", a: "c", exp: "cが正解（事実ではないもの）です。\nIppeiはフィギュアスケートがスポーツであるかどうかについて一般的な観点から論じており、彼自身の個人的な体験（personal experience）に基づいて意見を述べているわけではないため、cは不適切です。\nなお、議論のテーマはフィギュアスケートがスポーツかどうか(a)、順番はIppeiの後にKarlie(b)、Ippeiは説得力を持たせるためにサッカーを引き合いに出している(d)のは事実です。", audio: "What is not true about this debate? c. Ippei’s opinion is based on his personal experience." },
+              { id: "l2_cd_2", type: "select", options: ["a", "b", "c", "d"], q: "2. What is Karlie’s opinion?\na. Subjective opinions are sometimes better than objective ones.\nb. In some athletic events like the 100 meters, teamwork is not important.\nc. Many regular sports have clear standards, while figure skating lacks them.\nd. In figure skating, music should be taken into account more.", a: "c", exp: "cが正解です。\nKarlieは、陸上競技（100メートル走など）のような通常のスポーツにはタイムや距離といった明確な基準がある一方で、フィギュアスケートにはそのような客観的な基準が欠けており、主観的な評価に頼っていると主張しています。", audio: "What is Karlie’s opinion? c. Many regular sports have clear standards, while figure skating lacks them." }
+            ]
+          }
+        ]
+      },
+      {
+        section: "Reading 2",
+        subsections: [
+          {
+            title: "Vocabulary A",
+            instruction: "空所に入る適切な語を下の語群から選び、必要に応じて適切な形に変えて入力しなさい。",
+            questions: [
+              { id: "r2_v_1", type: "text", wordbank: ["dominate", "industry", "inclusive", "disguise", "ensure", "actual", "popularity", "salary", "diversity"], q: "Which do you like better, electronic sports or [   ] sports?", a: "actual", exp: "「eスポーツと実際のスポーツとでは，あなたはどちらの方が好きか」", audio: "Which do you like better, electronic sports or actual sports." },
+              { id: "r2_v_2", type: "text", wordbank: ["dominate", "industry", "inclusive", "disguise", "ensure", "actual", "popularity", "salary", "diversity"], q: "The young comedy duo gained in [   ] right after their participation in a contest.", a: "popularity", exp: "「その若いお笑いコンビは，コンテストへの参加直後，人気が増した」", audio: "The young comedy duo gained in popularity right after their participation in a contest." },
+              { id: "r2_v_3", type: "text", wordbank: ["dominate", "industry", "inclusive", "disguise", "ensure", "actual", "popularity", "salary", "diversity"], q: "Guatemala is one of the countries [   ] by Spain in the past.", a: "dominated", exp: "「グアテマラは，過去にスペインによって支配されていた国々の１つだ」", audio: "Guatemala is one of the countries dominated by Spain in the past." },
+              { id: "r2_v_4", type: "text", wordbank: ["dominate", "industry", "inclusive", "disguise", "ensure", "actual", "popularity", "salary", "diversity"], q: "Many people would agree that encouraging cultural [   ] is important.", a: "diversity", exp: "「文化的多様性が大切なものであるということには，多くの人が同意することだろう」", audio: "Many people would agree that encouraging cultural diversity is important." },
+              { id: "r2_v_5", type: "text", wordbank: ["dominate", "industry", "inclusive", "disguise", "ensure", "actual", "popularity", "salary", "diversity"], q: "Midori set a strong password to [   ] the security of her social media account.", a: "ensure", exp: "「ミドリはSNSアカウントの安全性を確保するため，強力なパスワードを設定した」", audio: "Midori set a strong password to ensure the security of her social media account." }
+            ]
+          },
+          {
+            title: "Vocabulary B",
+            instruction: "次の文の空所に適切な語を入力しなさい。",
+            questions: [
+              { id: "r2_vb_1", type: "text", q: "This documentary program focuses on [   ] people who live in the countryside. (ordinaryなど)", a: "ordinary", exp: "「このドキュメンタリー番組は田舎に暮らす普通の人々に焦点を当てている」", audio: "This documentary program focuses on ordinary people who live in the countryside." },
+              { id: "r2_vb_2", type: "text", q: "The price of this electric guitar [   ] a guitar case, a stand, and a cable. (includeなど)", a: ["includes", "include"], exp: "「このエレキギターの値段にはギターケース，スタンド，シールド（ギターケーブル）が含まれている」", audio: "The price of this electric guitar includes a guitar case, a stand, and a cable." },
+              { id: "r2_vb_3", type: "text", q: "These days, the [   ] of teenagers have their own social media accounts. (majorityなど)", a: "majority", exp: "「近頃，10代の若者の大多数が自分のSNSアカウントを持っている」", audio: "These days, the majority of teenagers have their own social media accounts." },
+              { id: "r2_vb_4", type: "text", q: "Vincent felt better after moderate [   ] exercise. (physicalなど)", a: "physical", exp: "「ヴィンセントは適度な体の運動の後，気分がよくなった」", audio: "Vincent felt better after moderate physical exercise." }
+            ]
+          },
+          {
+            title: "Vocabulary C",
+            instruction: "日本語の意味に合うように、空所に適切な語を入力しなさい。",
+            questions: [
+              { id: "r2_vc_1", type: "text", q: "キャサリンはeスポーツではなく従来のスポーツが好きです。\nKathryn likes traditional sports [   ] [   ] to esports.", a: "as opposed", exp: "「…ではなく，…とは対照的に」は as opposed to ...で表す。", audio: "Kathryn likes traditional sports as opposed to esports." },
+              { id: "r2_vc_2", type: "text", q: "その工場は大きな需要に追いつくため，生産を増やしました。\nThe factory increased production to [   ] [   ] with the high demand.", a: "keep up", exp: "「…に追いつく，…についていく」はkeep up with ...。", audio: "The factory increased production to keep up with the high demand." },
+              { id: "r2_vc_3", type: "text", q: "その勉強会は，教育水準にかかわらずあらゆる人々を受け入れています。\nThe study session accepts all people [   ] [   ] their education levels.", a: "regardless of", exp: "「…にかかわらず」はregardless of ...で表す。", audio: "The study session accepts all people regardless of their education levels." }
+            ]
+          },
+          {
+            title: "Comprehension D",
+            instruction: "記事の著者の意見に合うものを全て選びなさい。",
+            questions: [
+              { id: "r2_cd_1", type: "multiselect", options: ["a", "b", "c", "d", "e"], q: "a. As a general rule, physical nature makes sports “sports”.\nb. Games like chess should be recognized as sports.\nc. Esports are not so much commercial as non-commercial.\nd. Esports industry will be in decline because it ignores diversity.\ne. Salaries that workers in the esports industry get need to be raised.", a: ["a"], exp: "aが正解です。\n著者は「概して（As a general rule）、身体的な性質（体を動かすこと）がスポーツを『スポーツ』たらしめている」と述べており、それが一般的な認識であるという見解を示しています。\n\n[その他の選択肢が不正解である理由]\nb: チェスのようなゲームをスポーツとして認識すべきとは主張していません。\nc: eスポーツが商業的でない(non-commercial)という記述はありません。\nd: 多様性を無視しているため衰退するという記述はありません。\ne: 給与を引き上げるべきだという主張はされていません。", audio: "a. As a general rule, physical nature makes sports 'sports'." }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // --- 音声録音フック ---
+    const useAudioRecorder = () => {
+      const [isRecording, setIsRecording] = useState(false);
+      const [audioUrl, setAudioUrl] = useState(null);
+      const mediaRecorderRef = useRef(null);
+      const audioChunksRef = useRef([]);
+
+      const startRecording = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorderRef.current = new MediaRecorder(stream);
+          
+          mediaRecorderRef.current.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorderRef.current.onstop = () => {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const url = URL.createObjectURL(audioBlob);
+            setAudioUrl(url);
+            audioChunksRef.current = [];
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          audioChunksRef.current = [];
+          mediaRecorderRef.current.start();
+          setIsRecording(true);
+        } catch (error) {
+          console.error("Microphone access denied or error occurred.", error);
+          alert("マイクへのアクセスが拒否されたか、エラーが発生しました。ブラウザの権限設定を確認してください。");
+        }
+      };
+
+      const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+          mediaRecorderRef.current.stop();
+          setIsRecording(false);
+        }
+      };
+
+      const clearAudio = () => {
+        setAudioUrl(null);
+      };
+
+      return { isRecording, audioUrl, startRecording, stopRecording, clearAudio };
+    };
+
+    // --- 個別の問題コンポーネント ---
+    const QuestionItem = ({ qData, index }) => {
+      const isMultiselect = qData.type === 'multiselect';
+      const isTextarea = qData.type === 'textarea';
+      
+      const [userAnswer, setUserAnswer] = useState(isMultiselect ? [] : '');
+      const [status, setStatus] = useState('idle'); 
+      const [showExplanation, setShowExplanation] = useState(false);
+      
+      const { isRecording, audioUrl, startRecording, stopRecording, clearAudio } = useAudioRecorder();
+
+      const handleCheck = () => {
+        let isCorrect = false;
+
+        if (isMultiselect) {
+          if (userAnswer.length === 0) return;
+          const sortedUser = [...userAnswer].sort();
+          const sortedAns = [...qData.a].sort();
+          if (JSON.stringify(sortedUser) === JSON.stringify(sortedAns)) {
+            isCorrect = true;
+          }
+        } else if (isTextarea && qData.keywords) {
+          if (!userAnswer.trim()) return;
+          const allKeywordsIncluded = qData.keywords.every(kw => userAnswer.includes(kw));
+          isCorrect = allKeywordsIncluded;
+        } else {
+          const normalizedUser = userAnswer.trim().toLowerCase().replace(/\s+/g, ' ');
+          if (normalizedUser === '') return;
+          
+          if (Array.isArray(qData.a)) {
+            isCorrect = qData.a.some(ans => ans.trim().toLowerCase().replace(/\s+/g, ' ') === normalizedUser);
+          } else {
+            const normalizedAns = qData.a.trim().toLowerCase().replace(/\s+/g, ' ');
+            isCorrect = normalizedUser === normalizedAns || (qData.a === "○" && userAnswer === "○") || (qData.a === "×" && userAnswer === "×") || (qData.a === "T" && userAnswer === "T") || (qData.a === "F" && userAnswer === "F");
+          }
+        }
+
+        setStatus(isCorrect ? 'correct' : 'incorrect');
+      };
+
+      const handleReveal = () => {
+        setStatus('revealed');
+        setShowExplanation(true); 
+      };
+
+      const playAudio = () => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel(); 
+          const utterance = new SpeechSynthesisUtterance(qData.audio);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.9; 
+          window.speechSynthesis.speak(utterance);
+        } else {
+          alert("お使いのブラウザは音声読み上げに対応していません。");
+        }
+      };
+
+      return (
+        <div className="bg-white rounded-xl shadow-md p-8 mb-8 border border-gray-100 transition-all">
+          <div className="flex gap-6">
+            <div className="flex-shrink-0 w-12 h-12 text-2xl bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold mt-1">
+              {index + 1}
+            </div>
+            <div className="flex-grow">
+              {qData.wordbank && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-2xl font-medium">
+                  <span className="font-bold text-yellow-800">語群: </span> 
+                  <span className="text-yellow-900 leading-relaxed">{qData.wordbank.join(', ')}</span>
+                </div>
+              )}
+
+              <p className="text-3xl mb-6 whitespace-pre-wrap leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                {qData.q}
+              </p>
+
+              <div className={`flex ${isTextarea ? 'flex-col' : 'flex-col sm:flex-row'} gap-4 mb-6 items-start ${isTextarea ? '' : 'sm:items-center'}`}>
+                
+                {qData.type === 'select' && (
+                  <select 
+                    className={`flex-grow border-2 p-4 rounded-lg text-2xl outline-none transition-colors cursor-pointer ${
+                      status === 'idle' ? 'border-gray-300 focus:border-blue-500' :
+                      status === 'correct' ? 'border-green-500 bg-green-50' : 
+                      status === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-100'
+                    }`}
+                    value={userAnswer}
+                    onChange={(e) => {
+                      setUserAnswer(e.target.value);
+                      if (status !== 'idle') setStatus('idle');
+                    }}
+                    disabled={status === 'correct' || status === 'revealed'}
+                  >
+                    <option value="">選択してください</option>
+                    {qData.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                )}
+
+                {qData.type === 'multiselect' && (
+                  <div className="flex flex-wrap gap-6 flex-grow items-center p-2">
+                    {qData.options.map(opt => (
+                      <label key={opt} className={`flex items-center gap-3 text-2xl cursor-pointer ${(status === 'correct' || status === 'revealed') ? 'opacity-70' : ''}`}>
+                        <input 
+                          type="checkbox" 
+                          className="w-8 h-8 cursor-pointer accent-blue-600" 
+                          checked={userAnswer.includes(opt)}
+                          onChange={(e) => {
+                            let newArr;
+                            if(e.target.checked) newArr = [...userAnswer, opt];
+                            else newArr = userAnswer.filter(item => item !== opt);
+                            setUserAnswer(newArr);
+                            if (status !== 'idle') setStatus('idle');
+                          }}
+                          disabled={status === 'correct' || status === 'revealed'}
+                        />
+                        <span className="font-bold">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {qData.type === 'textarea' && (
+                  <textarea 
+                    className={`w-full border-2 p-4 rounded-lg text-2xl outline-none transition-colors min-h-[120px] ${
+                      status === 'idle' ? 'border-gray-300 focus:border-blue-500' :
+                      status === 'correct' ? 'border-green-500 bg-green-50' : 
+                      status === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-100'
+                    }`}
+                    placeholder="日本語で解答を入力..."
+                    value={userAnswer}
+                    onChange={(e) => {
+                      setUserAnswer(e.target.value);
+                      if (status !== 'idle') setStatus('idle');
+                    }}
+                    disabled={status === 'correct' || status === 'revealed'}
+                  />
+                )}
+
+                {(!qData.type || qData.type === 'text') && (
+                  <input 
+                    type="text" 
+                    className={`flex-grow border-2 p-4 rounded-lg text-2xl outline-none transition-colors ${
+                      status === 'idle' ? 'border-gray-300 focus:border-blue-500' :
+                      status === 'correct' ? 'border-green-500 bg-green-50' : 
+                      status === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-100'
+                    }`}
+                    placeholder="解答を入力... (複数の単語はスペースで区切る)"
+                    value={userAnswer}
+                    onChange={(e) => {
+                      setUserAnswer(e.target.value);
+                      if (status !== 'idle') setStatus('idle');
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                    disabled={status === 'correct' || status === 'revealed'}
+                  />
+                )}
+
+                <div className={`flex gap-3 ${isTextarea ? 'self-end' : ''}`}>
+                  <button 
+                    onClick={handleCheck}
+                    disabled={(isMultiselect ? userAnswer.length === 0 : !userAnswer?.trim?.()) || status === 'correct' || status === 'revealed'}
+                    className="bg-blue-600 text-white px-8 py-4 text-xl rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+                  >
+                    解答する
+                  </button>
+                  <button 
+                    onClick={handleReveal}
+                    disabled={status === 'correct' || status === 'revealed'}
+                    className="bg-gray-500 text-white px-6 py-4 text-xl rounded-lg font-semibold hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+                  >
+                    答えを見る
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                <div>
+                  {status !== 'idle' && (
+                    <div className={`flex items-center gap-3 font-bold text-2xl ${
+                      status === 'correct' ? 'text-green-600' : 
+                      status === 'incorrect' ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {status === 'correct' ? <CheckCircle size={32} /> : 
+                       status === 'incorrect' ? <XCircle size={32} /> : <BookOpen size={32} />}
+                      {status === 'correct' ? '正解！よくできました！' : 
+                       status === 'incorrect' ? (isTextarea ? '不正解... 指定のキーワードが含まれていません。' : '不正解... もう一度挑戦してみよう！') :
+                       '解答を表示しました。'}
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => setShowExplanation(!showExplanation)}
+                  className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 py-3 text-lg rounded-lg hover:bg-gray-200 transition-colors font-semibold border border-gray-300"
+                >
+                  <BookOpen size={20} /> {showExplanation ? '解説を隠す' : '解説を見る'}
+                </button>
+              </div>
+
+              {showExplanation && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 shadow-inner">
+                  <div className="font-bold text-gray-700 mb-3 text-xl flex items-center gap-2">
+                    <BookOpen size={24} className="text-blue-500" /> 
+                    正答(模範解答): {Array.isArray(qData.a) ? qData.a.join(' / ') : qData.a}
+                  </div>
+                  <p className="text-gray-600 leading-relaxed text-xl whitespace-pre-wrap">{qData.exp}</p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-4 mt-8 pt-6 border-t border-gray-100">
+                <button 
+                  onClick={playAudio}
+                  className="flex items-center gap-2 bg-purple-100 text-purple-700 px-6 py-3 text-lg rounded-full hover:bg-purple-200 transition-colors font-medium"
+                >
+                  <Volume2 size={24} /> {isTextarea ? "関連する英文を聴く" : "英文を聴く"}
+                </button>
+
+                <div className="h-8 w-px bg-gray-300 mx-2 hidden sm:block"></div>
+
+                {!isRecording ? (
+                  <button 
+                    onClick={startRecording}
+                    className="flex items-center gap-2 bg-red-100 text-red-700 px-6 py-3 text-lg rounded-full hover:bg-red-200 transition-colors font-medium"
+                  >
+                    <Mic size={24} /> 発音を録音する
+                  </button>
+                ) : (
+                  <button 
+                    onClick={stopRecording}
+                    className="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 text-lg rounded-full hover:bg-gray-700 transition-colors font-medium animate-pulse"
+                  >
+                    <Square size={24} fill="currentColor" /> 録音停止
+                  </button>
+                )}
+
+                {audioUrl && (
+                  <div className="flex items-center gap-3 ml-auto bg-green-50 px-4 py-2 rounded-full border border-green-200">
+                    <span className="text-lg text-green-800 font-medium mr-2">録音データ:</span>
+                    <audio src={audioUrl} controls className="h-10 w-64" />
+                    <button onClick={clearAudio} className="text-gray-400 hover:text-red-500" title="削除">
+                      <XCircle size={28} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- メインアプリケーション ---
+    function App() {
+      const [activeSectionIdx, setActiveSectionIdx] = useState(0);
+      const activeSection = quizData[activeSectionIdx];
+
+      useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, [activeSectionIdx]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans text-gray-800 flex flex-col md:flex-row">
+          <aside className="w-full md:w-80 bg-white border-r border-gray-200 p-8 flex-shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto overflow-x-hidden shadow-sm z-10">
+            <div className="mb-10">
+              <h1 className="text-4xl font-black text-blue-800 leading-tight">
+                English<br/>Workbook<br/>Companion
+              </h1>
+              <p className="text-lg text-gray-500 mt-4">Unit 2: Esports</p>
+            </div>
+            
+            <nav className="space-y-4">
+              {quizData.map((section, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveSectionIdx(idx)}
+                  className={`w-full text-left px-6 py-4 rounded-lg text-xl font-medium transition-all duration-200 ${
+                    activeSectionIdx === idx 
+                      ? 'bg-blue-600 text-white shadow-md transform scale-[1.02]' 
+                      : 'text-gray-600 hover:bg-blue-50'
+                  }`}
+                >
+                  {section.section}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <main className="flex-grow p-6 md:p-12 md:max-w-6xl mx-auto w-full">
+            <header className="mb-12">
+              <h2 className="text-5xl font-bold text-gray-800 mb-4">{activeSection.section}</h2>
+              <p className="text-xl text-gray-600 leading-relaxed">左のメニューからセクションを切り替えられます。音声を聴いたり、自分の発音を録音して確認してみましょう。</p>
+            </header>
+
+            {activeSection.subsections.map((sub, subIdx) => (
+              <section key={subIdx} className="mb-16">
+                <div className="bg-blue-50 border-l-8 border-blue-500 p-6 mb-8 rounded-r-lg shadow-sm">
+                  <h3 className="text-3xl font-bold text-blue-900">{sub.title}</h3>
+                  <p className="text-xl text-blue-800 mt-3">{sub.instruction}</p>
+                </div>
+
+                <div className="space-y-6">
+                  {sub.questions.map((q, qIdx) => (
+                    <QuestionItem key={q.id} qData={q} index={qIdx} />
+                  ))}
+                </div>
+              </section>
+            ))}
+            
+            <footer className="text-center text-gray-400 mt-16 mb-10 text-xl border-t border-gray-200 pt-8">
+              Keep up the good work! Continuous practice leads to success.
+            </footer>
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
